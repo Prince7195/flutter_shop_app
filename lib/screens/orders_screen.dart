@@ -5,7 +5,7 @@ import 'package:shop_app/widgets/AppDrawer.dart';
 import 'package:shop_app/widgets/order_item.dart';
 
 class OrdersScreen extends StatelessWidget {
-  static String routeName = "/orders";
+  static const routeName = "/orders";
 
   @override
   Widget build(BuildContext context) {
