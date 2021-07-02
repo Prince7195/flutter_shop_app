@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shop_app/provider/products.dart';
 import 'package:shop_app/screens/edit_product_screen.dart';
-import 'package:shop_app/screens/user_products_screen.dart';
 
 class UserProductItem extends StatelessWidget {
   final String id;
@@ -13,6 +12,7 @@ class UserProductItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scaffoldMessage = ScaffoldMessenger.of(context);
     return ListTile(
       leading: CircleAvatar(
         backgroundImage: NetworkImage(imageUrl),
@@ -31,8 +31,20 @@ class UserProductItem extends StatelessWidget {
               color: Theme.of(context).primaryColor,
             ),
             IconButton(
-              onPressed: () {
-                Provider.of<Products>(context, listen: false).removeProduct(id);
+              onPressed: () async {
+                try {
+                  await Provider.of<Products>(context, listen: false)
+                      .removeProduct(id);
+                  scaffoldMessage.showSnackBar(SnackBar(
+                    content: Text('Deleted Successfully!'),
+                    backgroundColor: Theme.of(context).primaryColor,
+                  ));
+                } catch (err) {
+                  scaffoldMessage.showSnackBar(SnackBar(
+                    content: Text('Deletion failed!'),
+                    backgroundColor: Theme.of(context).errorColor,
+                  ));
+                }
               },
               icon: Icon(Icons.delete),
               color: Theme.of(context).errorColor,
