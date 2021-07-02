@@ -52,6 +52,10 @@ class Products with ChangeNotifier {
     try {
       final res = await http.get(Uri.parse('$_baseUrl.json'));
       final extractedData = json.decode(res.body) as Map<String, dynamic>;
+      // ignore: unnecessary_null_comparison
+      if (extractedData == null) {
+        return;
+      }
       List<Product> loadedProducts = [];
       extractedData.forEach((id, prod) {
         loadedProducts.add(

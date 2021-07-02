@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:http/http.dart' as http;
 
 const uuid = Uuid();
 
@@ -24,8 +27,25 @@ class Product with ChangeNotifier {
     }
   }
 
-  void toggleFavorite() {
+  void _setFavValue(bool value) {
+    isFavorite = value;
+    notifyListeners();
+  }
+
+  Future<void> toggleFavorite() async {
+    final oldIsFavorite = isFavorite;
     isFavorite = !isFavorite;
     notifyListeners();
+    final url = Uri.parse(
+        'https://flutter-shop-f3ea1-default-rtdb.firebaseio.com/products/$id.json');
+    try {
+      final res =
+          await http.patch(url, body: json.encode({'isFavorite': isFavorite}));
+      if (res.statusCode >= 400) {
+        _setFavValue(oldIsFavorite);
+      }
+    } catch (err) {
+      _setFavValue(oldIsFavorite);
+    }
   }
 }
