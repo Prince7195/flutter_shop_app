@@ -22,6 +22,11 @@ class OrderItem {
 class Orders with ChangeNotifier {
   List<OrderItem> _orders = [];
 
+  final String _authToken;
+  final String _userId;
+
+  Orders(this._authToken, this._userId, this._orders);
+
   List<OrderItem> get orders {
     return [..._orders];
   }
@@ -31,7 +36,7 @@ class Orders with ChangeNotifier {
 
   Future<void> addOrders(List<CartItem> cartProducts, double total) async {
     final timeStamp = DateTime.now();
-    final url = Uri.parse('$_baseUrl.json');
+    final url = Uri.parse('$_baseUrl/$_userId.json?auth=$_authToken');
     final res = await http.post(url,
         body: json.encode({
           'totalAmount': total,
@@ -57,7 +62,7 @@ class Orders with ChangeNotifier {
   }
 
   Future<void> fetchAndSetorders() async {
-    final url = Uri.parse('$_baseUrl.json');
+    final url = Uri.parse('$_baseUrl/$_userId.json?auth=$_authToken');
     final res = await http.get(url);
     final extractedData = json.decode(res.body) as Map<String, dynamic>;
     // ignore: unnecessary_null_comparison

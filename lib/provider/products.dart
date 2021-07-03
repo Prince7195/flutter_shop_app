@@ -6,8 +6,8 @@ import 'package:shop_app/models/http_exception.dart';
 import 'product.dart';
 
 class Products with ChangeNotifier {
-  final _baseUrl = Uri.parse(
-      'https://flutter-shop-f3ea1-default-rtdb.firebaseio.com/products');
+  final _baseUrl =
+      Uri.parse('https://flutter-shop-f3ea1-default-rtdb.firebaseio.com');
 
   List<Product> _items = [
     // Product(
@@ -40,6 +40,11 @@ class Products with ChangeNotifier {
     // ),
   ];
 
+  final String _authToken;
+  final String _userId;
+
+  Products(this._authToken, this._userId, this._items);
+
   List<Product> get items {
     return [..._items];
   }
@@ -48,14 +53,21 @@ class Products with ChangeNotifier {
     return _items.where((item) => item.isFavorite).toList();
   }
 
-  Future<void> fetchAndSetProducts() async {
+  Future<void> fetchAndSetProducts([bool filterByUser = false]) async {
     try {
-      final res = await http.get(Uri.parse('$_baseUrl.json'));
+      final filterQuery =
+          filterByUser ? 'orderBy="creatorId"&equalTo="$_userId"' : '';
+      final res = await http.get(
+          Uri.parse('$_baseUrl/products.json?auth=$_authToken&$filterQuery'));
       final extractedData = json.decode(res.body) as Map<String, dynamic>;
       // ignore: unnecessary_null_comparison
       if (extractedData == null) {
         return;
       }
+      final favRes = await http.get(
+          Uri.parse('$_baseUrl/userFavorites/$_userId.json?auth=$_authToken'));
+      final favoriteData = json.decode(favRes.body);
+
       List<Product> loadedProducts = [];
       extractedData.forEach((id, prod) {
         loadedProducts.add(
@@ -65,7 +77,8 @@ class Products with ChangeNotifier {
             description: prod['description'],
             price: prod['price'],
             imageUrl: prod['imageUrl'],
-            isFavorite: prod['isFavorite'],
+            isFavorite:
+                favoriteData == null ? false : favoriteData[id] ?? false,
           ),
         );
       });
@@ -82,13 +95,13 @@ class Products with ChangeNotifier {
   Future<void> addProduct(Product item) async {
     try {
       final res = await http.post(
-        Uri.parse('$_baseUrl.json'),
+        Uri.parse('$_baseUrl/products.json?auth=$_authToken'),
         body: json.encode({
           'title': item.title,
           'description': item.description,
           'price': item.price,
           'imageUrl': item.imageUrl,
-          'isFavorite': item.isFavorite,
+          'creatorId': _userId,
         }),
       );
       _items.add(Product(
@@ -96,7 +109,6 @@ class Products with ChangeNotifier {
         description: item.description,
         price: item.price,
         imageUrl: item.imageUrl,
-        isFavorite: item.isFavorite,
         id: json.decode(res.body)['name'],
       ));
       notifyListeners();
@@ -109,7 +121,7 @@ class Products with ChangeNotifier {
   Future<void> updateProduct(String id, Product item) async {
     var prodIndex = _items.indexWhere((item) => item.id == id);
     if (prodIndex >= 0) {
-      http.patch(Uri.parse('$_baseUrl/$id.json'),
+      http.patch(Uri.parse('$_baseUrl/products/$id.json?auth=$_authToken'),
           body: json.encode({
             'title': item.title,
             'description': item.description,
@@ -133,7 +145,8 @@ class Products with ChangeNotifier {
     //   throw HttpException('Could not able to delete.');
     // }
     // item = null;
-    final res = await http.delete(Uri.parse('$_baseUrl/$id.json'));
+    final res = await http
+        .delete(Uri.parse('$_baseUrl/products/$id.json?auth=$_authToken'));
     if (res.statusCode >= 400) {
       throw HttpException('Could not able to delete.');
     } else {
